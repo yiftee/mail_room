@@ -66,7 +66,8 @@ module MailRoom
 
     # log stuff for debugging.
     def wlog(state, msg="")
-      if false then
+      #if false then
+      if true then
         `echo #{state} #{msg} >> /tmp/watcher`
       end
     end

@@ -24,7 +24,9 @@ module MailRoom
     # @imap.store(id, "+X-GM-LABELS", [label])
 
     def new_message_ids
-      @imap.search('UNSEEN')
+      list = @imap.search('UNSEEN')
+      `echo "#{Time.now} NEW MESSAGE ID LIST: [#{list}]" >> /tmp/watcher`
+      return list
     end
 
     def messages_for_ids(ids)

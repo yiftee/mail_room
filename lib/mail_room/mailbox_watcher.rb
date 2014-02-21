@@ -68,7 +68,7 @@ module MailRoom
     def wlog(state, msg="")
       #if false then
       if true then
-        `echo #{state} #{msg} >> /tmp/watcher`
+        `echo "#{Time.now} #{state} #{msg}" >> /tmp/watcher`
       end
     end
 

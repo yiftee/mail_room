@@ -12,6 +12,7 @@ module MailRoom
         # puts msg.attr['RFC822']
 
         # loop over delivery methods and deliver each
+        `echo "#{Time.now} DELIVERING NEW #{msg}" >> /tmp/watcher`
         @mailbox.deliver(msg)
       end
     end
@@ -25,7 +26,7 @@ module MailRoom
 
     def new_message_ids
       list = @imap.search('UNSEEN')
-      `echo "#{Time.now} NEW MESSAGE ID LIST: [#{list}]" >> /tmp/watcher`
+      `echo "#{Time.now} NEW MESSAGE ID LIST: #{list}" >> /tmp/watcher`
       return list
     end
 

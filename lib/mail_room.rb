@@ -1,6 +1,7 @@
 require 'net/imap'
 require 'optparse'
 require 'yaml'
+require 'mail'
 
 module MailRoom
   # def self.logger

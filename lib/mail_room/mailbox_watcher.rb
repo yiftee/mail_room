@@ -168,6 +168,9 @@ module MailRoom
 
       @running = true
 
+      process_mailbox  # idle won't find anything if no new mail has arrived.  So check first to see
+                       # if we have stuff to pick up.  All idle does is wake up if new mail has arrived.
+
       self.idling_thread = Thread.start do
         while (running?) do
           # block until we stop idling

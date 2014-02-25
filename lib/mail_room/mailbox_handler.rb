@@ -67,15 +67,9 @@ module MailRoom
       end
 
       `echo "#{Time.now} NEW MESSAGE ID LIST: #{list} UNSEEN: #{unseen_list}" >> /tmp/watcher`
-      if (unseen_list != nil) && (unseen_list.count > 0) then
-        if (list == nil) || (list.count == 0) || (unseen_list.max > list.max) then
-          return unseen_list
-        else
-          return list
-        end
-      else
-        return list
-      end
+       merged_list = (list + unseen_list).sort.uniq
+       return merged_list
+
     end
 
     def messages_for_ids(ids)

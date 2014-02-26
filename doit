@@ -1,0 +1,2 @@
+gem build mail_room.gemspec
+gem install mail_room-0.1.0.gem

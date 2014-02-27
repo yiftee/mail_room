@@ -17,10 +17,16 @@ module MailRoom
         mail = Mail.read_from_string(message)
 
         subject = mail.subject
-        text_part = mail.text_part.body.to_s
-        body =  mail.html_part.body.to_s
-        _ = text_part
-        _ = body
+        # if mail.text_part.present? && mail.text_part.body.present? then
+        #   text_part = mail.text_part.body.to_s
+        # else
+        #   text_part = nil
+        # end
+        # if mail.html_part.present? && mail.html_part.body.present? then
+        #   body =  mail.html_part.body.to_s
+        # else
+        #   body = nil
+        # end
 
         `echo "#{Time.now} DELIVERING NEW #{subject}" >> /tmp/watcher`
         @mailbox.deliver(msg)
@@ -66,8 +72,8 @@ module MailRoom
         list = @imap.search("#{start_list}:#{end_list}")
       end
 
-      `echo "#{Time.now} NEW MESSAGE ID LIST: #{list} UNSEEN: #{unseen_list}" >> /tmp/watcher`
        merged_list = (list + unseen_list).sort.uniq
+      `echo "#{Time.now} NEW MESSAGE ID LIST: #{list} UNSEEN: #{unseen_list} MERGED: #{merged_list}" >> /tmp/watcher`
        return merged_list
 
     end

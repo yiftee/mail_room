@@ -19,9 +19,11 @@ module MailRoom
     end
 
     def handler
-      wlog("S3", @mailbox)
+      #wlog("S3", @mailbox)
+      wlog("S3", "")
       @handler ||= MailboxHandler.new(@mailbox, imap)
-      wlog("S4", @mailbox)
+      #wlog("S4", @mailbox)
+      wlog("S4", "")
       @handler
     end
 
@@ -44,11 +46,13 @@ module MailRoom
 
     def log_in
       if @mailbox != nil then
-        wlog("S5", @mailbox.email + "---" + @mailbox.password)
+        #wlog("S5", @mailbox.email + "---" + @mailbox.password)
+        wlog("S5", "")
       end
       imap.login(@mailbox.email, @mailbox.password)
       if @mailbox != nil then
-        wlog("S6", @mailbox.email + "---" + @mailbox.password)
+        #wlog("S6", @mailbox.email + "---" + @mailbox.password)
+        wlog("S6", "")
       end
       @logged_in = true
     end

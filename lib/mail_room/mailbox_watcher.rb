@@ -89,7 +89,7 @@ module MailRoom
           imap.disconnect
         rescue Exception => e
           wlog("PANIC", e)
-          `/home/yiftee/yiftee/script/mailgw restart`
+          `(setsid /home/yiftee/yiftee/script/mailgw restart &)`
           raise "WATCHER"
         end
       end
@@ -101,7 +101,7 @@ module MailRoom
         setup
       rescue Exception => e
         wlog("FATAL", e)
-        `/home/yiftee/yiftee/script/mailgw restart`
+        `(setsid /home/yiftee/yiftee/script/mailgw restart &)`
         raise "WATCHER" # kills thread
       end
     end

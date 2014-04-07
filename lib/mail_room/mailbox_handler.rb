@@ -16,7 +16,27 @@ module MailRoom
         message = msg.attr['RFC822']  # the whole message
         mail = Mail.read_from_string(message)
 
-        subject = mail.subject
+        s = mail.subject
+        if s == nil then
+          subject = ""
+        else
+          subject = s.to_s  # mail returns classes that are NOT strings!
+        end
+
+        f = mail.from
+        if f == nil then
+          from = ""
+        else
+          from = f.to_s
+        end
+
+        # Remove mail from google, youtube, etc.  Note that 'from' is not a string (it's an address container)
+        # Note we remove quotes since some subjects could have embedded quotes and this will mess up the shell command
+        if from.nil? || (from.include?("daemon")) || (from.include?("noreply")) then
+          `echo "#{Time.now} REMOVING MAIL FROM #{from} WITH SUBJECT #{subject.gsub('"',"")}" >> /tmp/watcher`
+           # next
+        end
+
         # if mail.text_part.present? && mail.text_part.body.present? then
         #   text_part = mail.text_part.body.to_s
         # else
@@ -28,7 +48,7 @@ module MailRoom
         #   body = nil
         # end
 
-        `echo "#{Time.now} DELIVERING NEW #{subject}" >> /tmp/watcher`
+        `echo "#{Time.now} FROM #{from} DELIVERING NEW #{subject.gsub('"',"")}" >> /tmp/watcher`
         @mailbox.deliver(msg)
       end
     end
@@ -55,6 +75,9 @@ module MailRoom
       status = state.readlines
       if status.count != 0 then
         last_id = status[0].chomp
+        if last_id == "0" then
+          last_id = "1"  # imap numbers are 1-based
+        end
       else
         last_id = "1000000000"  # i.e., some wildly far off number
       end

@@ -34,7 +34,7 @@ module MailRoom
         # Note we remove quotes since some subjects could have embedded quotes and this will mess up the shell command
         if from.nil? || (from.include?("daemon")) || (from.include?("noreply")) then
           `echo "#{Time.now} REMOVING MAIL FROM #{from} WITH SUBJECT #{subject.gsub('"',"")}" >> /tmp/watcher`
-           # next
+           next
         end
 
         # if mail.text_part.present? && mail.text_part.body.present? then

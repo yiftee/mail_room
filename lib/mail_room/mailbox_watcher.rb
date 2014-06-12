@@ -15,6 +15,15 @@ module MailRoom
       wlog("S1", "")
       @imap ||= Net::IMAP.new('imap.gmail.com', :port => 993, :ssl => true)
       wlog("S2", "")
+      tries = 0
+      while (@imap == nil) && (tries < 10) do
+        sleep(10)
+        wlog("EMPTY IMAP", "")
+        @imap ||= Net::IMAP.new('imap.gmail.com', :port => 993, :ssl => true)
+      end
+      if @imap == nil then
+        raise "IMAP"
+      end
       @imap
     end
 

@@ -7,7 +7,9 @@ module MailRoom
     :log_path, # for logger
     :delivery_url, # for postback
     :delivery_token, # for postback
-    :location # for letter_opener
+    :location, # for letter_opener
+    :state_watcher, # for jk's state machine debugging
+    :next_imap_id   # for jk's recovery mechanism on restarts
   ])
 
   class Mailbox

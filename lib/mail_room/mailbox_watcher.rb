@@ -80,8 +80,9 @@ module MailRoom
     # log stuff for debugging.
     def wlog(state, msg="")
       #if false then
+      watchfile = @mailbox.state_watcher
       if true then
-        `echo "#{Time.now} #{state} #{msg}" >> /tmp/watcher`
+        `echo "#{Time.now} #{state} #{msg}" >> "#{watchfile}"`
       end
     end
 

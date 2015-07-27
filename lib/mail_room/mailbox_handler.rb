@@ -30,10 +30,11 @@ module MailRoom
           from = f.to_s
         end
 
+        watchfile = @mailbox.state_watcher
         # Remove mail from google, youtube, etc.  Note that 'from' is not a string (it's an address container)
         # Note we remove quotes since some subjects could have embedded quotes and this will mess up the shell command
         if from.nil? || (from.include?("daemon")) || (from.include?("noreply")) then
-          `echo "#{Time.now} REMOVING MAIL FROM #{from} WITH SUBJECT #{subject.gsub('"',"")}" >> /tmp/watcher`
+          `echo "#{Time.now} REMOVING MAIL FROM #{from} WITH SUBJECT #{subject.gsub('"',"")}" >> "#{watchfile}"`
            next
         end
 
@@ -48,7 +49,7 @@ module MailRoom
         #   body = nil
         # end
 
-        `echo "#{Time.now} FROM #{from} DELIVERING NEW #{subject.gsub('"',"")}" >> /tmp/watcher`
+        `echo "#{Time.now} FROM #{from} DELIVERING NEW #{subject.gsub('"',"")}" >> "#{watchfile}"`
         @mailbox.deliver(msg)
       end
     end
@@ -67,10 +68,12 @@ module MailRoom
       # could also try to use the Recent flag to find unprocessed messages.
       unseen_list = @imap.search('UNSEEN')    # using gmail marks as seen, so we don't want this as it's subject to failure
       
+      watchfile = @mailbox.state_watcher
       last_message_id = @imap.status("inbox", ["MESSAGES"])["MESSAGES"].to_s
-      `echo "LAST MESSAGE ID: #{last_message_id}" >> /tmp/watcher`
+      `echo "LAST MESSAGE ID: #{last_message_id}" >> "#{watchfile}"`
 
-      state_path = "/home/yiftee/yiftee/tmp/next_mc_email"
+      #state_path = "/home/yiftee/yiftee/tmp/next_mc_email"
+      state_path = @mailbox.next_imap_id
       state = File.new(state_path, File::CREAT|File::RDWR, 0644)
       status = state.readlines
       if status.count != 0 then
@@ -96,7 +99,8 @@ module MailRoom
       end
 
        merged_list = (list + unseen_list).sort.uniq
-      `echo "#{Time.now} NEW MESSAGE ID LIST: #{list} UNSEEN: #{unseen_list} MERGED: #{merged_list}" >> /tmp/watcher`
+       watchfile = @mailbox.state_watcher
+      `echo "#{Time.now} NEW MESSAGE ID LIST: #{list} UNSEEN: #{unseen_list} MERGED: #{merged_list}" >> "#{watchfile}"`
        return merged_list
 
     end

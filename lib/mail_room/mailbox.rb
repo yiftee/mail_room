@@ -9,7 +9,8 @@ module MailRoom
     :delivery_token, # for postback
     :location, # for letter_opener
     :state_watcher, # for jk's state machine debugging
-    :next_imap_id   # for jk's recovery mechanism on restarts
+    :next_imap_id,   # for jk's recovery mechanism on restarts
+    :application_kind     # sonofhubspot, mastercard
   ])
 
   class Mailbox

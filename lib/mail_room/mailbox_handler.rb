@@ -31,12 +31,38 @@ module MailRoom
         end
 
         watchfile = @mailbox.state_watcher
+
         # Remove mail from google, youtube, etc.  Note that 'from' is not a string (it's an address container)
         # Note we remove quotes since some subjects could have embedded quotes and this will mess up the shell command
-        if from.nil? || (from.include?("daemon")) || (from.include?("noreply")) then
-          `echo "#{Time.now} REMOVING MAIL FROM #{from} WITH SUBJECT #{subject.gsub('"',"")}" >> "#{watchfile}"`
-           next
+        # Note that removing mail requires ignoring it for inControl and delivering it for sonofhubspot.
+        subj = subject.gsub('"',"")
+
+        application_kind = @mailbox.application_kind
+        hubspot = false
+        if application_kind == "sonofhubspot" then
+          hubspot = true
         end
+
+        if !hubspot then
+          # Don't deliver to mcapi for updating vcn auth data; this is spam or other garbage
+          if from.nil? || !(from.include?("incontrol")) then
+            `echo "#{Time.now} REMOVING MC MAIL FROM #{from} WITH SUBJECT #{subj}" >> "#{watchfile}"`
+            next
+          end
+        else
+          if from.nil? || (from.include?("daemon")) || (from.include?("noreply")) ||
+           subj.include?("SPAM") || subj.include?("am no longer") || subj.include?("change of email") then
+
+            # Deliver these, so we will stop trying a resend for unresponded-to email.
+            `echo "#{Time.now} REMOVING MAIL FROM #{from} WITH SUBJECT #{subj}" >> "#{watchfile}"`
+          elsif subj.include?("Out of Office") || subj.include?("Automatic reply") ||
+           subj.include?("Auto-Reply") || subj.include?("Your mail") || subj.include?("Auto Response") then
+            # Don't deliver these, so we will try a resend later for unresponded-to email.
+            `echo "#{Time.now} PRESERVING MAIL FROM #{from} WITH SUBJECT #{subj}" >> "#{watchfile}"`
+            next
+          end
+        end
+
 
         # if mail.text_part.present? && mail.text_part.body.present? then
         #   text_part = mail.text_part.body.to_s
@@ -66,11 +92,30 @@ module MailRoom
     ###list = @imap.search(["NOT", "NEW"])
     def new_message_ids
       # could also try to use the Recent flag to find unprocessed messages.
-      unseen_list = @imap.search('UNSEEN')    # using gmail marks as seen, so we don't want this as it's subject to failure
+ 
+      application_kind = @mailbox.application_kind
+      hubspot = false
+      if application_kind == "sonofhubspot" then
+        hubspot = true
+      end
+      if !application_kind.present? then
+        application_kind = "mastercard"
+      end
+
+      if hubspot then
+        unseen_list = []
+      else
+        unseen_list = @imap.search('UNSEEN')    # using gmail marks as seen, so we don't want
+                                                # to rely only on this as it's subject to failure
+                                                # from manual marking etc.
+        if !unseen_list.present? then
+          unseen_list = []
+        end
+      end
       
       watchfile = @mailbox.state_watcher
       last_message_id = @imap.status("inbox", ["MESSAGES"])["MESSAGES"].to_s
-      `echo "LAST MESSAGE ID: #{last_message_id}" >> "#{watchfile}"`
+      `echo "#{application_kind}: LAST MESSAGE ID: #{last_message_id}" >> "#{watchfile}"`
 
       #state_path = "/home/yiftee/yiftee/tmp/next_mc_email"
       state_path = @mailbox.next_imap_id
@@ -98,17 +143,29 @@ module MailRoom
         list = @imap.search("#{start_list}:#{end_list}")
       end
 
-       merged_list = (list + unseen_list).sort.uniq
-       watchfile = @mailbox.state_watcher
+      # We rely on seen/unseen for restartability after failures.
+      # If we got it, it's marked seen by default.
+      merged_list = (list + unseen_list).sort.uniq
+      watchfile = @mailbox.state_watcher
       `echo "#{Time.now} NEW MESSAGE ID LIST: #{list} UNSEEN: #{unseen_list} MERGED: #{merged_list}" >> "#{watchfile}"`
-       return merged_list
+      return merged_list
 
     end
 
     def messages_for_ids(ids)
       return [] if ids.empty?
 
+      application_kind = @mailbox.application_kind
+      hubspot = false
+      if application_kind == "sonofhubspot" then
+        hubspot = true
+      end
+
       @imap.fetch(ids, "RFC822")
+      if hubspot then
+        @imap.store(ids, "-FLAGS", [:Seen])  # This should turn off seen bit
+      end
+      # @imap.store(ids, "+FLAGS", [:Seen])  # By default, will be seen when imapping a gmail mail
       # @imap.store(ids, "+FLAGS", [:Recent])
     end
   end

@@ -8,6 +8,13 @@ module MailRoom
     def process
       # return if idling? || !running?
 
+      watchfile = @mailbox.state_watcher
+      application_kind = @mailbox.application_kind
+      hubspot = false
+      if application_kind == "sonofhubspot" then
+        hubspot = true
+      end
+
       new_messages.each do |msg|
         # puts msg.attr['RFC822']
 
@@ -30,18 +37,11 @@ module MailRoom
           from = f.to_s
         end
 
-        watchfile = @mailbox.state_watcher
 
         # Remove mail from google, youtube, etc.  Note that 'from' is not a string (it's an address container)
         # Note we remove quotes since some subjects could have embedded quotes and this will mess up the shell command
         # Note that removing mail requires ignoring it for inControl and delivering it for sonofhubspot.
         subj = subject.gsub('"',"")
-
-        application_kind = @mailbox.application_kind
-        hubspot = false
-        if application_kind == "sonofhubspot" then
-          hubspot = true
-        end
 
         if !hubspot then
           # Don't deliver to mcapi for updating vcn auth data; this is spam or other garbage
@@ -64,12 +64,12 @@ module MailRoom
         end
 
 
-        # if mail.text_part.present? && mail.text_part.body.present? then
+        # if mail.text_part == nil  && mail.text_part.body == nil then
         #   text_part = mail.text_part.body.to_s
         # else
         #   text_part = nil
         # end
-        # if mail.html_part.present? && mail.html_part.body.present? then
+        # if mail.html_part == nil && mail.html_part.body == nil then
         #   body =  mail.html_part.body.to_s
         # else
         #   body = nil
@@ -98,7 +98,7 @@ module MailRoom
       if application_kind == "sonofhubspot" then
         hubspot = true
       end
-      if !application_kind.present? then
+      if application_kind == nil then
         application_kind = "mastercard"
       end
 
@@ -108,7 +108,7 @@ module MailRoom
         unseen_list = @imap.search('UNSEEN')    # using gmail marks as seen, so we don't want
                                                 # to rely only on this as it's subject to failure
                                                 # from manual marking etc.
-        if !unseen_list.present? then
+        if unseen_list == nil then
           unseen_list = []
         end
       end
@@ -161,12 +161,13 @@ module MailRoom
         hubspot = true
       end
 
-      @imap.fetch(ids, "RFC822")
+      res = @imap.fetch(ids, "RFC822")
       if hubspot then
         @imap.store(ids, "-FLAGS", [:Seen])  # This should turn off seen bit
       end
       # @imap.store(ids, "+FLAGS", [:Seen])  # By default, will be seen when imapping a gmail mail
       # @imap.store(ids, "+FLAGS", [:Recent])
+      return res
     end
   end
 end

@@ -45,7 +45,7 @@ module MailRoom
 
         if !hubspot then
           # Don't deliver to mcapi for updating vcn auth data; this is spam or other garbage
-          if from.nil? || !(from.include?("incontrol")) then
+          if from.nil? || !(from.downcase.include?("incontrol")) then
             `echo "#{Time.now} REMOVING MC MAIL FROM #{from} WITH SUBJECT #{subj}" >> "#{watchfile}"`
             next
           end

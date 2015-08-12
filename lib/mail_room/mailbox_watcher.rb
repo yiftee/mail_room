@@ -63,6 +63,9 @@ module MailRoom
         #wlog("S6", @mailbox.email + "---" + @mailbox.password)
         wlog("S6", "")
       end
+      # To see what mailboxes ('name' config param) are available to map
+      # x = imap.list('*', '*')
+      # `echo "#{x}" > /tmp/avail_folders`
       @logged_in = true
     end
 

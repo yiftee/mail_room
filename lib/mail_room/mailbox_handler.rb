@@ -114,7 +114,8 @@ module MailRoom
       end
       
       watchfile = @mailbox.state_watcher
-      last_message_id = @imap.status("inbox", ["MESSAGES"])["MESSAGES"].to_s
+      mbox = @mailbox.name  # e.g., "inbox", "[Gmail]/All Mail"
+      last_message_id = @imap.status(mbox, ["MESSAGES"])["MESSAGES"].to_s
       `echo "#{application_kind}: LAST MESSAGE ID: #{last_message_id}" >> "#{watchfile}"`
 
       #state_path = "/home/yiftee/yiftee/tmp/next_mc_email"

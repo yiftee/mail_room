@@ -21,6 +21,7 @@ module MailRoom
         # loop over delivery methods and deliver each
 
         message = msg.attr['RFC822']  # the whole message
+
         mail = Mail.read_from_string(message)
 
         s = mail.subject
@@ -37,6 +38,16 @@ module MailRoom
           from = f.to_s
         end
 
+        # A good reference is:
+        # https://pramodbshinde.wordpress.com/2014/12/07/gmail-api-in-ruby-on-rails-a-piece-of-cake/
+        seqno = msg.seqno
+        if hubspot then
+          if from.include?("yiftee.com") then
+            # nothing
+          else
+            @imap.store([seqno], "-FLAGS", [:Seen])  # This should turn off seen bit
+          end
+        end
 
         # Remove mail from google, youtube, etc.  Note that 'from' is not a string (it's an address container)
         # Note we remove quotes since some subjects could have embedded quotes and this will mess up the shell command
@@ -163,9 +174,9 @@ module MailRoom
       end
 
       res = @imap.fetch(ids, "RFC822")
-      if hubspot then
-        @imap.store(ids, "-FLAGS", [:Seen])  # This should turn off seen bit
-      end
+##      if hubspot then
+##        @imap.store(ids, "-FLAGS", [:Seen])  # This should turn off seen bit
+##      end
       # @imap.store(ids, "+FLAGS", [:Seen])  # By default, will be seen when imapping a gmail mail
       # @imap.store(ids, "+FLAGS", [:Recent])
       return res

@@ -97,12 +97,14 @@ module MailRoom
         wlog("BROKEN", msg)
         # We don't want to try idle_done since if we're not in idle state, this will
         # throw an exception.  There aren't a lot of primitives available; disconnect is the only
-        # other thing to try.
-        if msg == "deadlock detected" then
+        # other thing to try.  The message 'deadlock detected' may contain some control character
+        # since the one time we compared it with == it failed.
+        if msg.include?("deadlock") then
           wlog("DEADLOCK", msg)
           `(setsid /home/yiftee/yiftee/script/mailgw restart &)`
           raise "WATCHER"
         end
+        wlog("FIXING", msg)
         begin
           imap.disconnect
         rescue Exception => e

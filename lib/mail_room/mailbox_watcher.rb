@@ -20,6 +20,7 @@ module MailRoom
         sleep(10)
         wlog("EMPTY IMAP", "")
         @imap ||= Net::IMAP.new('imap.gmail.com', :port => 993, :ssl => true)
+        tries += 1
       end
       if @imap == nil then
         raise "IMAP"
@@ -83,14 +84,21 @@ module MailRoom
     # log stuff for debugging.
     def wlog(state, msg="")
       #if false then
-      watchfile = @mailbox.state_watcher
+      if (@mailbox == nil) then
+        watchfile = "/tmp/MAILBOXCRASH"
+      else
+        watchfile = @mailbox.state_watcher
+      end
+      if (watchfile == nil) || (watchfile == "") then
+        watchfile = "/tmp/MAILBOXCRASH1"
+      end
       if true then
         `echo "#{Time.now} #{state} #{msg}" >> "#{watchfile}"`
       end
     end
 
     def reset_imap(where, msg)
-      wlog("RESET", msg)
+      wlog("RESET", msg + " [" + where + "]")
       if imap.disconnected? then
         wlog("DISCONNECTED", msg)
       else
@@ -99,7 +107,8 @@ module MailRoom
         # throw an exception.  There aren't a lot of primitives available; disconnect is the only
         # other thing to try.  The message 'deadlock detected' may contain some control character
         # since the one time we compared it with == it failed.
-        if msg.include?("deadlock") then
+        # 'not during IDLE' is another odd message we see.
+        if msg.include?("deadlock") || msg.include?("during") then
           wlog("DEADLOCK", msg)
           `(setsid /home/yiftee/yiftee/script/mailgw restart &)`
           raise "WATCHER"

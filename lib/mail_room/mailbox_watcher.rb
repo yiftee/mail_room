@@ -84,11 +84,12 @@ module MailRoom
     # log stuff for debugging.
     def wlog(state, info="")
       if info.class != String then
+        klass = info.class.to_s
+        `echo "#{Time.now} KLASS #{klass}" >> "/tmp/KLASS"`
         msg = info.message
       else
         msg = info
       end
-      #if false then
       if (@mailbox == nil) then
         watchfile = "/tmp/MAILBOXCRASH"
       else
@@ -97,12 +98,17 @@ module MailRoom
       if (watchfile == nil) || (watchfile == "") then
         watchfile = "/tmp/MAILBOXCRASH1"
       end
-      if true then
-        `echo "#{Time.now} #{state} #{msg}" >> "#{watchfile}"`
-      end
+      `echo "#{Time.now} #{state} #{msg}" >> "#{watchfile}"`
     end
 
-    def reset_imap(where, msg)
+    def reset_imap(where, info)
+      if info.class != String then
+        klass = info.class.to_s
+        wlog("KLASS", "RESETTING NON_STRING MSG: #{klass}")
+        msg = info.message
+      else
+        msg = info
+      end
       wlog("RESET", msg + " [" + where + "]")
       if imap.disconnected? then
         wlog("DISCONNECTED", msg)

@@ -82,7 +82,12 @@ module MailRoom
     end
 
     # log stuff for debugging.
-    def wlog(state, msg="")
+    def wlog(state, info="")
+      if info.class != String then
+        msg = info.message
+      else
+        msg = info
+      end
       #if false then
       if (@mailbox == nil) then
         watchfile = "/tmp/MAILBOXCRASH"

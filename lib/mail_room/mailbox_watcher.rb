@@ -177,11 +177,17 @@ module MailRoom
                 @idling = false
               end
               @done_lock.unlock
+            elsif response.respond_to?(:name) && response.name == 'BAD'
+              wlog("W", response.inspect)
+              `(setsid /home/yiftee/yiftee/script/mailgw restart &)`
+              raise "IDLE"
             else
               # We may get here if the watchdog forces an idle_done.
               # In this case, we don't want another idle_done (which will cause an error).
               # We simply return, and process_messages will find nothing to do; we'll end up back in idle.
-              wlog("X", "")
+              wlog("X", response.inspect)
+              sleep(2)  # give it time to ensure idle won't return a 'cached' result
+                        # of 'got something' when it really doesn't.
             end  # imap.idle
           end
           wlog("c1", "")
@@ -243,7 +249,14 @@ module MailRoom
       # kill must use -9 if we're in the middle of an idle to nuke the whole process.
       # kill -INT only works if disconnected.
       loop do
-        sleep(60 * 10)  # imap times out after 29 min so 10 should be conservative
+        sleep(60 * 3)  # NAT kills connections after 5 minutes
+                       # imap itself times out after 29 minutes.
+                       # previously we did 10 minutes, but the NAT properties
+                       # make something less than 5 minutes preferable, although
+                       # the code will still work -- we just get gratuitous connection
+                       # resets.
+        # DO NOT DO imap.noop to try to keep connection alive; it breaks the state
+        # of the connection irretrievably ('BAD').
         wlog("a", "")
         if @idling then  ### this might need to be in a critical section.
           begin

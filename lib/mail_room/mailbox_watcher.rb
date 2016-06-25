@@ -178,14 +178,14 @@ module MailRoom
               end
               @done_lock.unlock
             elsif response.respond_to?(:name) && response.name == 'BAD'
-              wlog("W", response.inspect)
+              wlog("W", response.inspect.gsub(/["\\]/,''))
               `(setsid /home/yiftee/yiftee/script/mailgw restart &)`
               raise "IDLE"
             else
               # We may get here if the watchdog forces an idle_done.
               # In this case, we don't want another idle_done (which will cause an error).
               # We simply return, and process_messages will find nothing to do; we'll end up back in idle.
-              wlog("X", response.inspect)
+              wlog("X", response.inspect.gsub(/["\\]/,''))
               sleep(2)  # give it time to ensure idle won't return a 'cached' result
                         # of 'got something' when it really doesn't.
             end  # imap.idle

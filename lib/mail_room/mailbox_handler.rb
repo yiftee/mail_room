@@ -15,7 +15,9 @@ module MailRoom
         hubspot = true
       end
 
-      new_messages.each do |msg|
+      todo = new_messages
+      `echo "#{Time.now} Processing #{todo.count} messages" >> "#{watchfile}"`
+      todo.each do |msg|
         # puts msg.attr['RFC822']
 
         # loop over delivery methods and deliver each

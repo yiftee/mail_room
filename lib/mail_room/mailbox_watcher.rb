@@ -119,7 +119,8 @@ module MailRoom
         # other thing to try.  The message 'deadlock detected' may contain some control character
         # since the one time we compared it with == it failed.
         # 'not during IDLE' is another odd message we see.
-        if msg.include?("deadlock") || msg.include?("during") then
+        # The worst is No live threads left. Deadlock?
+        if msg.downcase.include?("deadlock") || msg.downcase.include?("during") then
           wlog("DEADLOCK", msg)
           `(setsid /home/yiftee/yiftee/script/mailgw restart &)`
           raise "WATCHER"

@@ -142,7 +142,8 @@ module MailRoom
         setup
       rescue Exception => e
         wlog("FATAL", e)
-        `(setsid /home/yiftee/yiftee/script/mailgw restart &)`
+        # `(setsid /home/yiftee/yiftee/script/mailgw restart &)`
+        exit  # let monit.d handle; the above seems to not work
         raise "WATCHER" # kills thread
       end
     end

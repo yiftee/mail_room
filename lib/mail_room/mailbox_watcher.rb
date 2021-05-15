@@ -16,8 +16,22 @@ module MailRoom
       @imap ||= Net::IMAP.new('imap.gmail.com', :port => 993, :ssl => true)
       wlog("S2", "")
       tries = 0
+      reacquire_lock = false
       while (@imap == nil) && (tries < 10) do
-        sleep(10)
+        if (@done_lock != nil) && @done_lock.owned? then
+          reacquire_lock = true
+          @done_lock.unlock
+          wlog("S7", "")
+        end
+        sleep(10)  # This can cause the 'No live threads left' exception.  Don't sleep while holding a lock.
+                   # The theory is that ruby thinks this thread has the lock and sleeps holding it while the
+                   # other thread is also sleeping.  So there is nobody to do anything to cause the reason for sleeping
+                   # to go away -- except in this case, it's a system call we're waiting on.  It's only a theory so have
+                   # to see if the watchdogs go away.  At any rate, it's bad to sleep holding a lock.
+        if reacquire_lock && (@done_lock != nil) && !@done_lock.owned? then
+          @done_lock.lock
+          reacquire_lock = false
+        end
         wlog("EMPTY IMAP", "")
         @imap ||= Net::IMAP.new('imap.gmail.com', :port => 993, :ssl => true)
         tries += 1
@@ -173,12 +187,16 @@ module MailRoom
               # yield a response -- there's mail to read.  Still in idle state, so set to done
               # so we can cleanly re-enter idle (it's an error to idle while in idle state).
               wlog("E", "")
-              @done_lock.lock
+              if (@done_lock != nil) && !@done_lock.owned?  then
+                @done_lock.lock
+              end
               if @idling then
                 imap.idle_done
                 @idling = false
               end
-              @done_lock.unlock
+              if (@done_lock != nil) && @done_lock.owned?  then
+                @done_lock.unlock
+              end
             elsif response.respond_to?(:name) && response.name == 'BAD'
               wlog("W", response.inspect.gsub(/["\\]/,''))
               `(setsid /home/yiftee/yiftee/script/mailgw restart &)`
@@ -194,6 +212,9 @@ module MailRoom
           end
           wlog("c1", "")
         rescue Exception => e
+          if (@done_lock != nil) && @done_lock.owned? then
+            @done_lock.unlock
+          end
           wlog("E2", e)
           clean = false
           reset_imap("idle", e)
@@ -263,7 +284,9 @@ module MailRoom
         if @idling then  ### this might need to be in a critical section.
           begin
             # force keepalive; thread will then idle again.
-            @done_lock.lock
+            if (@done_lock != nil) && !@done_lock.owned? then
+              @done_lock.lock
+            end
             if @idling then
               wlog("POKE_TRY", "")
               if (@imap != nil) && !imap.disconnected? then
@@ -272,8 +295,13 @@ module MailRoom
               end
               @idling = false
             end
-            @done_lock.unlock
+            if (@done_lock != nil) && @done_lock.owned? then
+              @done_lock.unlock
+            end
           rescue Exception => e
+            if (@done_lock != nil) && @done_lock.owned? then
+              @done_lock.unlock
+            end
             reset_imap("watchdog", e)
           end
         end
